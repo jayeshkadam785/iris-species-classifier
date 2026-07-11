@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Iris Specimen Classifier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F7F3EA;
+    --ink: #223324;
+    --iris: #6B4E9C;
+    --sage: #A8B79A;
+    --gold: #C9A227;
+    --line: #D8D2C0;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-position: -1px -1px;
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 48px 20px;
+  }
+
+  .specimen-card {
+    background: #FFFDF8;
+    border: 1px solid var(--line);
+    box-shadow: 0 1px 0 var(--line), 0 12px 30px rgba(34, 51, 36, 0.08);
+    max-width: 720px;
+    width: 100%;
+    padding: 0;
+  }
+
+  .card-header {
+    padding: 36px 40px 24px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--iris);
+    margin: 0 0 10px;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 34px;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+
+  .subtitle {
+    font-size: 14.5px;
+    color: #5B6B5D;
+    margin: 0;
+    max-width: 480px;
+    line-height: 1.5;
+  }
+
+  .card-body {
+    padding: 32px 40px 40px;
+    display: grid;
+    grid-template-columns: 1fr 180px;
+    gap: 36px;
+  }
+
+  @media (max-width: 620px) {
+    .card-body { grid-template-columns: 1fr; }
+  }
+
+  .field {
+    margin-bottom: 22px;
+  }
+
+  .field:last-child { margin-bottom: 0; }
+
+  .field-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+
+  .field-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  .field-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--iris);
+    font-weight: 500;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 2px;
+    background: var(--line);
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--iris);
+    cursor: pointer;
+    border: 2px solid #FFFDF8;
+    box-shadow: 0 0 0 1px var(--iris);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--iris);
+    cursor: pointer;
+    border: 2px solid #FFFDF8;
+    box-shadow: 0 0 0 1px var(--iris);
+  }
+
+  .diagram-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 4px;
+  }
+
+  .diagram-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #8A9285;
+    margin-top: 12px;
+  }
+
+  button.classify {
+    margin-top: 28px;
+    width: 100%;
+    background: var(--ink);
+    color: #FFFDF8;
+    border: none;
+    padding: 14px 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    grid-column: 1 / -1;
+  }
+
+  button.classify:hover { background: var(--iris); }
+  button.classify:focus-visible { outline: 2px solid var(--iris); outline-offset: 2px; }
+  button.classify:disabled { background: var(--sage); cursor: wait; }
+
+  .result {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--line);
+    padding-top: 24px;
+    margin-top: 4px;
+    display: none;
+  }
+
+  .result.visible { display: block; }
+
+  .result-species {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 26px;
+    color: var(--iris);
+    margin: 0 0 4px;
+  }
+
+  .result-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8A9285;
+    margin: 0 0 18px;
+  }
+
+  .conf-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+  }
+
+  .conf-name {
+    width: 130px;
+    flex-shrink: 0;
+    color: var(--ink);
+  }
+
+  .conf-bar-track {
+    flex: 1;
+    height: 6px;
+    background: var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .conf-bar-fill {
+    height: 100%;
+    background: var(--sage);
+    transition: width 0.4s ease;
+  }
+
+  .conf-bar-fill.top { background: var(--iris); }
+
+  .conf-pct {
+    width: 44px;
+    text-align: right;
+    color: #5B6B5D;
+  }
+
+  .error {
+    color: #B3462C;
+    font-size: 13px;
+    margin-top: 12px;
+    grid-column: 1 / -1;
+    display: none;
+  }
+
+  .error.visible { display: block; }
+
+  .footer-note {
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: #8A9285;
+    margin-top: 24px;
+  }
+</style>
+</head>
+<body>
+
+<div class="specimen-card">
+  <div class="card-header">
+    <p class="eyebrow">Herbarium Specimen No. 1936 — Genus Iris</p>
+    <h1>Iris Species Classifier</h1>
+    <p class="subtitle">Adjust the sepal and petal measurements below to see which species the model identifies, with its confidence for each.</p>
+  </div>
+
+  <div class="card-body">
+    <div class="inputs">
+      <div class="field">
+        <div class="field-label-row">
+          <span class="field-label">Sepal length</span>
+          <span class="field-value" id="val-sl">5.8 cm</span>
+        </div>
+        <input type="range" id="sl" min="4.3" max="7.9" step="0.1" value="5.8" oninput="onSlide()">
+      </div>
+      <div class="field">
+        <div class="field-label-row">
+          <span class="field-label">Sepal width</span>
+          <span class="field-value" id="val-sw">3.0 cm</span>
+        </div>
+        <input type="range" id="sw" min="2.0" max="4.4" step="0.1" value="3.0" oninput="onSlide()">
+      </div>
+      <div class="field">
+        <div class="field-label-row">
+          <span class="field-label">Petal length</span>
+          <span class="field-value" id="val-pl">4.3 cm</span>
+        </div>
+        <input type="range" id="pl" min="1.0" max="6.9" step="0.1" value="4.3" oninput="onSlide()">
+      </div>
+      <div class="field">
+        <div class="field-label-row">
+          <span class="field-label">Petal width</span>
+          <span class="field-value" id="val-pw">1.3 cm</span>
+        </div>
+        <input type="range" id="pw" min="0.1" max="2.5" step="0.1" value="1.3" oninput="onSlide()">
+      </div>
+    </div>
+
+    <div class="diagram-wrap">
+      <svg id="petal-svg" width="140" height="160" viewBox="0 0 140 160">
+        <!-- sepal (back, wider) -->
+        <ellipse id="sepal-shape" cx="70" cy="90" rx="30" ry="14" fill="none" stroke="#A8B79A" stroke-width="1.5"/>
+        <!-- petal (front, narrower) -->
+        <ellipse id="petal-shape" cx="70" cy="60" rx="14" ry="30" fill="#6B4E9C" fill-opacity="0.18" stroke="#6B4E9C" stroke-width="1.5"/>
+      </svg>
+      <p class="diagram-label">To scale (relative)</p>
+    </div>
+
+    <button class="classify" id="classify-btn" onclick="classify()">Identify Species</button>
+
+    <div class="error" id="error-box"></div>
+
+    <div class="result" id="result-box">
+      <p class="result-species" id="result-species">—</p>
+      <p class="result-sub" id="result-sub">Model confidence by species</p>
+      <div id="conf-rows"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function onSlide() {
+  document.getElementById('val-sl').textContent = document.getElementById('sl').value + ' cm';
+  document.getElementById('val-sw').textContent = document.getElementById('sw').value + ' cm';
+  document.getElementById('val-pl').textContent = document.getElementById('pl').value + ' cm';
+  document.getElementById('val-pw').textContent = document.getElementById('pw').value + ' cm';
+
+  const sw = parseFloat(document.getElementById('sw').value);
+  const sl = parseFloat(document.getElementById('sl').value);
+  const pl = parseFloat(document.getElementById('pl').value);
+  const pw = parseFloat(document.getElementById('pw').value);
+
+  // scale svg shapes proportionally to slider ranges (purely illustrative)
+  document.getElementById('sepal-shape').setAttribute('rx', 14 + (sl - 4.3) / (7.9 - 4.3) * 24);
+  document.getElementById('sepal-shape').setAttribute('ry', 8 + (sw - 2.0) / (4.4 - 2.0) * 14);
+  document.getElementById('petal-shape').setAttribute('ry', 12 + (pl - 1.0) / (6.9 - 1.0) * 26);
+  document.getElementById('petal-shape').setAttribute('rx', 6 + (pw - 0.1) / (2.5 - 0.1) * 14);
+}
+
+async function classify() {
+  const btn = document.getElementById('classify-btn');
+  const errorBox = document.getElementById('error-box');
+  const resultBox = document.getElementById('result-box');
+  errorBox.classList.remove('visible');
+  resultBox.classList.remove('visible');
+  btn.disabled = true;
+  btn.textContent = 'Identifying…';
+
+  const payload = {
+    sepal_length: document.getElementById('sl').value,
+    sepal_width: document.getElementById('sw').value,
+    petal_length: document.getElementById('pl').value,
+    petal_width: document.getElementById('pw').value,
+  };
+
+  try {
+    const res = await fetch('/api/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Prediction failed');
+
+    document.getElementById('result-species').textContent = data.species.replace('Iris-', '');
+
+    const rows = document.getElementById('conf-rows');
+    rows.innerHTML = '';
+    const entries = Object.entries(data.confidence).sort((a, b) => b[1] - a[1]);
+    const maxName = entries[0][0];
+    entries.forEach(([name, pct]) => {
+      const row = document.createElement('div');
+      row.className = 'conf-row';
+      row.innerHTML = `
+        <span class="conf-name">${name.replace('Iris-', '')}</span>
+        <span class="conf-bar-track"><span class="conf-bar-fill ${name === maxName ? 'top' : ''}" style="width:${pct}%"></span></span>
+        <span class="conf-pct">${pct}%</span>
+      `;
+      rows.appendChild(row);
+    });
+
+    resultBox.classList.add('visible');
+  } catch (err) {
+    errorBox.textContent = 'Could not reach the classifier: ' + err.message;
+    errorBox.classList.add('visible');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Identify Species';
+  }
+}
+
+onSlide();
+</script>
+
+<p class="footer-note">Trained on the classic Fisher Iris dataset (150 samples) · SVM classifier</p>
+
+</body>
+</html>
